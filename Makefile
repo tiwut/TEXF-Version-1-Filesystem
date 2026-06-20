@@ -1,6 +1,20 @@
 .PHONY: all clean
 
-all: mkfs.texf texf-mount texf-gui
+FUSE_EXISTS := $(shell pkg-config --exists fuse3 || pkg-config --exists fuse || ls /usr/include/fuse.h /usr/local/include/fuse.h /opt/homebrew/include/fuse.h /usr/local/include/osxfuse/fuse.h >/dev/null 2>&1 && echo "yes" || echo "no")
+
+TARGETS := mkfs.texf texf-gui
+
+ifeq ($(FUSE_EXISTS),yes)
+TARGETS += texf-mount
+endif
+
+all: $(TARGETS)
+	@if [ "$(FUSE_EXISTS)" = "no" ]; then \
+		echo "========================================================================="; \
+		echo " WARNING: FUSE headers not found (fuse.h). Skipping build of texf-mount."; \
+		echo " Install libfuse (Linux) or macFUSE/FUSE-T (macOS) to build mount support."; \
+		echo "========================================================================="; \
+	fi
 
 mkfs.texf: cmd/mkfs/main.go cmd/mkfs/device_darwin.go cmd/mkfs/device_other.go fs/types.go
 	go build -o mkfs.texf ./cmd/mkfs

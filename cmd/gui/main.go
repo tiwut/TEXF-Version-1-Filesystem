@@ -284,7 +284,7 @@ func handleMount(w http.ResponseWriter, r *http.Request) {
 
 	cmdPath := "./texf-mount"
 	if _, err := os.Stat(cmdPath); os.IsNotExist(err) {
-		addLog("mount", "Error: texf-mount binary not found in current directory. Please run 'make' first.")
+		addLog("mount", "Error: texf-mount binary not found. Please install FUSE (libfuse-dev on Linux, or macFUSE/FUSE-T on macOS) and run 'make' to enable mount support.")
 		http.Error(w, "texf-mount not built", http.StatusInternalServerError)
 		return
 	}
