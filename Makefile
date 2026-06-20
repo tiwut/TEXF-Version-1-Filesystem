@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-FUSE_EXISTS := $(shell pkg-config --exists fuse3 || pkg-config --exists fuse || ls /usr/include/fuse.h /usr/local/include/fuse.h /opt/homebrew/include/fuse.h /usr/local/include/osxfuse/fuse.h >/dev/null 2>&1 && echo "yes" || echo "no")
+FUSE_EXISTS := $(shell (command -v pkg-config >/dev/null 2>&1 && (pkg-config --exists fuse3 2>/dev/null || pkg-config --exists fuse 2>/dev/null)) || ls /usr/include/fuse.h /usr/local/include/fuse.h /opt/homebrew/include/fuse.h /usr/local/include/osxfuse/fuse.h >/dev/null 2>&1 && echo "yes" || echo "no")
 
 TARGETS := mkfs.texf texf-gui
 
