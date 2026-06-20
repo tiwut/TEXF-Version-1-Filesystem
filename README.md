@@ -29,15 +29,30 @@ The filesystem uses 4096-byte blocks organized in sequential order:
 
 ## Compilation
 
-Ensure you have Go installed on your system. Run `make` to compile the filesystem formatter and mount utilities:
+Ensure you have Go installed on your system. Run `make` to compile the filesystem formatter, mount utilities, and graphical user interface:
 
 ```bash
 make
 ```
 
-This builds two executables in your workspace:
+This builds three executables in your workspace:
 - `mkfs.texf`: Filesystem format utility.
 - `texf-mount`: FUSE mounting daemon.
+- `texf-gui`: Graphical manager application.
+
+---
+
+## Graphical Manager Application
+
+For a visual interface that automatically queries block devices on Linux/macOS, formats disks, mounts/unmounts partitions, and streams real-time FUSE console logs, run:
+
+```bash
+sudo ./texf-gui
+```
+
+This starts a lightweight web server on port `8080` and opens `http://localhost:8080` in your web browser. Note that since low-level formatting and mounting requires raw hardware permissions, the GUI should be run with elevated privileges (`sudo`).
+
+*Note: The GUI app is compiled completely separate from the core filesystem driver and has no dependency on FUSE header files, making it buildable instantly on all systems out of the box.*
 
 ---
 
