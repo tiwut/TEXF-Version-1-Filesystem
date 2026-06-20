@@ -44,16 +44,14 @@ func formatDevice(path string, label string, numInodes int) error {
 
 	size, err := file.Seek(0, 2)
 	if err != nil || size == 0 {
-		if platSize, ok := getDeviceSizePlatform(file); ok && platSize > 0 {
-			size = platSize
-		} else {
-			fi, errStat := file.Stat()
-			if errStat != nil {
-				return fmt.Errorf("failed to stat device/file: %w", errStat)
-			}
-			size = fi.Size()
+
+		fi, errStat := file.Stat()
+		if errStat != nil {
+			return fmt.Errorf("failed to stat device/file: %w", errStat)
 		}
+		size = fi.Size()
 	} else {
+
 		_, err = file.Seek(0, 0)
 		if err != nil {
 			return fmt.Errorf("failed to seek back to start of device/file: %w", err)

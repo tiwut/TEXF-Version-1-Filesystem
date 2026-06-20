@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"texf/fs"
-	fsfuse "texf/fs/fuse"
 
 	"github.com/winfsp/cgofuse/fuse"
 )
@@ -35,7 +34,7 @@ func main() {
 	defer disk.Close()
 
 	driver := fs.NewDriver(disk)
-	texfuse := fsfuse.NewTEXFuse(driver)
+	texfuse := fs.NewTEXFuse(driver)
 
 	host := fuse.NewFileSystemHost(texfuse)
 	fmt.Printf("Mounting %s at %s...\n", devicePath, mountpoint)

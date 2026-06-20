@@ -1,19 +1,18 @@
-package fuse
+package fs
 
 import (
 	"path"
 	"time"
 
 	"github.com/winfsp/cgofuse/fuse"
-	"texf/fs"
 )
 
 type TEXFuse struct {
 	fuse.FileSystemBase
-	Driver *fs.Driver
+	Driver *Driver
 }
 
-func NewTEXFuse(driver *fs.Driver) *TEXFuse {
+func NewTEXFuse(driver *Driver) *TEXFuse {
 	return &TEXFuse{Driver: driver}
 }
 
@@ -22,15 +21,15 @@ func mapError(err error) int {
 		return 0
 	}
 	switch err {
-	case fs.ErrNotFound:
+	case ErrNotFound:
 		return -fuse.ENOENT
-	case fs.ErrAlreadyExists:
+	case ErrAlreadyExists:
 		return -fuse.EEXIST
-	case fs.ErrNotDirectory:
+	case ErrNotDirectory:
 		return -fuse.ENOTDIR
-	case fs.ErrIsDir:
+	case ErrIsDir:
 		return -fuse.EISDIR
-	case fs.ErrDirNotEmpty:
+	case ErrDirNotEmpty:
 		return -fuse.ENOTEMPTY
 	default:
 		return -fuse.EIO
@@ -38,15 +37,17 @@ func mapError(err error) int {
 }
 
 func (f *TEXFuse) Init() {
+
 }
 
 func (f *TEXFuse) Destroy() {
+
 }
 
 func (f *TEXFuse) Statfs(p string, stat *fuse.Statfs_t) int {
 	sb := f.Driver.Disk.GetSuperblock()
-	stat.Bsize = fs.BlockSize
-	stat.Frsize = fs.BlockSize
+	stat.Bsize = BlockSize
+	stat.Frsize = BlockSize
 	stat.Blocks = sb.BlockCount
 	stat.Bfree = sb.FreeBlocksCount
 	stat.Bavail = sb.FreeBlocksCount
@@ -72,7 +73,7 @@ func (f *TEXFuse) Getattr(p string, stat *fuse.Stat_t, fh uint64) int {
 	stat.Mtim = fuse.Timespec{Sec: inode.Mtime}
 	stat.Ctim = fuse.Timespec{Sec: inode.Ctime}
 	stat.Birthtim = fuse.Timespec{Sec: inode.Ctime}
-	stat.Blksize = fs.BlockSize
+	stat.Blksize = BlockSize
 	stat.Blocks = int64(inode.Blocks)
 	stat.Ino = uint64(ino)
 	return 0
@@ -84,7 +85,7 @@ func (f *TEXFuse) Chmod(p string, mode uint32) int {
 		return mapError(err)
 	}
 
-	inode.Mode = (inode.Mode & fs.S_IFMT) | (mode & fs.S_IRWXUGO)
+	inode.Mode = (inode.Mode & S_IFMT) | (mode & S_IRWXUGO)
 	inode.Ctime = time.Now().Unix()
 
 	err = f.Driver.Disk.WriteInode(ino, inode)
@@ -139,6 +140,7 @@ func (f *TEXFuse) Utimens(p string, tmsp []fuse.Timespec) int {
 }
 
 func (f *TEXFuse) Access(p string, mask uint32) int {
+
 	return 0
 }
 
@@ -152,7 +154,8 @@ func (f *TEXFuse) Create(p string, flags int, mode uint32) (int, uint64) {
 	}
 
 	uid, gid, _ := fuse.Getcontext()
-	_, _, err = f.Driver.CreateEntry(parentIno, name, fs.S_IFREG|(mode&fs.S_IRWXUGO), uid, gid, "")
+
+	_, _, err = f.Driver.CreateEntry(parentIno, name, S_IFREG|(mode&S_IRWXUGO), uid, gid, "")
 	if err != nil {
 		return mapError(err), 0
 	}
@@ -165,7 +168,7 @@ func (f *TEXFuse) Open(p string, flags int) (int, uint64) {
 	if err != nil {
 		return mapError(err), 0
 	}
-	if (inode.Mode & fs.S_IFMT) == fs.S_IFDIR {
+	if (inode.Mode & S_IFMT) == S_IFDIR {
 		return -fuse.EISDIR, 0
 	}
 	return 0, 0
@@ -233,7 +236,7 @@ func (f *TEXFuse) Mkdir(p string, mode uint32) int {
 	}
 
 	uid, gid, _ := fuse.Getcontext()
-	_, _, err = f.Driver.CreateEntry(parentIno, name, fs.S_IFDIR|(mode&fs.S_IRWXUGO), uid, gid, "")
+	_, _, err = f.Driver.CreateEntry(parentIno, name, S_IFDIR|(mode&S_IRWXUGO), uid, gid, "")
 	return mapError(err)
 }
 
@@ -296,16 +299,17 @@ func (f *TEXFuse) Readdir(p string, fill func(name string, stat *fuse.Stat_t, of
 	}
 
 	for _, de := range list {
+
 		stat := &fuse.Stat_t{
 			Ino:  uint64(de.Inode),
 			Mode: uint32(de.FileType) << 12,
 		}
-		if de.FileType == fs.FileTypeDirectory {
-			stat.Mode = fs.S_IFDIR
-		} else if de.FileType == fs.FileTypeSymlink {
-			stat.Mode = fs.S_IFLNK
+		if de.FileType == FileTypeDirectory {
+			stat.Mode = S_IFDIR
+		} else if de.FileType == FileTypeSymlink {
+			stat.Mode = S_IFLNK
 		} else {
-			stat.Mode = fs.S_IFREG
+			stat.Mode = S_IFREG
 		}
 
 		if !fill(de.Name, stat, 0) {
@@ -326,7 +330,7 @@ func (f *TEXFuse) Symlink(target string, newpath string) int {
 	}
 
 	uid, gid, _ := fuse.Getcontext()
-	_, _, err = f.Driver.CreateEntry(parentIno, name, fs.S_IFLNK|0777, uid, gid, target)
+	_, _, err = f.Driver.CreateEntry(parentIno, name, S_IFLNK|0777, uid, gid, target)
 	return mapError(err)
 }
 
@@ -336,7 +340,7 @@ func (f *TEXFuse) Readlink(p string) (int, string) {
 		return mapError(err), ""
 	}
 
-	if (inode.Mode & fs.S_IFMT) != fs.S_IFLNK {
+	if (inode.Mode & S_IFMT) != S_IFLNK {
 		return -fuse.EINVAL, ""
 	}
 
