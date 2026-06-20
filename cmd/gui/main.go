@@ -291,8 +291,11 @@ func handleMount(w http.ResponseWriter, r *http.Request) {
 
 	addLog("mount", "Mounting "+req.Device+" at "+req.MountPoint+"...")
 
-	// Pass foreground flag and allow_other
-	args := []string{req.Device, req.MountPoint, "-f", "-o", "allow_other"}
+	// Pass foreground flag, and allow_other only on Linux
+	args := []string{req.Device, req.MountPoint, "-f"}
+	if runtime.GOOS == "linux" {
+		args = append(args, "-o", "allow_other")
+	}
 	cmd := exec.Command(cmdPath, args...)
 
 	stdout, _ := cmd.StdoutPipe()
